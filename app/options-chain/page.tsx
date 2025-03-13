@@ -1,7 +1,31 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { socket } from "../socket";
+import { removeAllListeners } from "node:process";
 
 export default function Home() {
+  const [connectionStatus, setConnectionStatus] = useState(false);
+  const [transportName, setTransportName] = useState("");
+  useEffect(() => {
+    if (socket.connected) {
+      setConnectionStatus(true);
+      setTransportName(socket.io.engine.transport.name);
+    }
+    socket.on("connect", () => {
+      setConnectionStatus(true);
+      setTransportName(socket.io.engine.transport.name);
+      socket.io.engine.on("upgrade", (transport) => {
+        setTransportName(transport.name);
+      });
+    });
+    socket.on("data", (data: number[][]) => {
+      setData(data);
+    });
+    return () => {
+      socket.removeAllListeners();
+    };
+  }, []);
+
   const [data, setData] = useState([
     [1, 2, 3, 4, 5],
     [6, 7, 8, 9, 10],
@@ -11,7 +35,9 @@ export default function Home() {
     <div className="flex flex-col justify-center h-screen w-screen p-5">
       <div className="w-full h-36 flex justify-center bg-blue-800 rounded-lg">
         <div className="flex flex-col h-full justify-center text-white text-3xl font-mono">
-          Underlying : {underlying}{" "}
+          Underlying : {underlying} | Live Status :{" "}
+          {connectionStatus ? "Live" : "Disconnected"} | Transport_Method :{" "}
+          {transportName}
         </div>
       </div>
       <div className="flex flex-col grow w-full mt-5 bg-gray-200 rounded-lg overflow-scroll">
