@@ -53,7 +53,7 @@ export default function Page() {
       </div>
       <div className="w-full h-16 flex rounded-lg justify-between">
         <div className="w-[500px] bg-gray-100 flex justify-between px-5 mt-1">
-          <div className="w-48 text-2xl h-full flex flex-col justify-center">
+          <div className="w-full text-2xl h-full flex flex-col justify-center">
             Options
           </div>
         </div>
