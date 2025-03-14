@@ -84,13 +84,49 @@ export default function Home() {
                   return (
                     <React.Fragment key={idx}>
                       {stk && stk.length
-                        ? stk.map((val, tidx) => (
-                            <div key={tidx} className="flex w-full">
-                              <div className="flex justify-center w-full text-md font-mono">
-                                {val}
+                        ? stk.map((val, tidx) => {
+                            let text_colr;
+                            let bg_colr;
+                            if (tidx < 2) {
+                              if (stk[2] <= underlying) {
+                                bg_colr = "bg-[#f1eed9]";
+                              } else {
+                                bg_colr = "bg-white";
+                              }
+                            } else if (tidx > 2) {
+                              if (stk[2] >= underlying) {
+                                bg_colr = "bg-[#f1eed9]";
+                              } else {
+                                bg_colr = "bg-white";
+                              }
+                            } else {
+                              bg_colr = "bg-white";
+                            }
+                            if (tidx < 2) {
+                              if (stk[0] >= 0) {
+                                text_colr = "text-[#007a00]";
+                              } else {
+                                text_colr = "text-[#d02724]";
+                              }
+                            } else if (tidx > 2) {
+                              if (stk[4] >= 0) {
+                                text_colr = "text-[#007a00]";
+                              } else {
+                                text_colr = "text-[#d02724]";
+                              }
+                            } else {
+                              text_colr = "text-blue-800";
+                            }
+                            return (
+                              <div key={tidx} className="flex w-full">
+                                <div
+                                  className={`flex justify-center w-full text-md font-mono ${text_colr} ${bg_colr} border border-[#e3e3e3]`}
+                                >
+                                  {val}
+                                </div>
                               </div>
-                            </div>
-                          ))
+                            );
+                          })
                         : null}
                     </React.Fragment>
                   );
