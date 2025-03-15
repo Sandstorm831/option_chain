@@ -17,7 +17,12 @@ export type dataObject = {
 export default function Home() {
   const { data, transport, connectionStatus, underlying } = useWorker();
 
-  const cache = useRef(new CellMeasurerCache());
+  const cache = useRef(
+    new CellMeasurerCache({
+      fixedHeight: true,
+      defaultWidth: 370,
+    }),
+  );
   function cellRenderer({
     isScrolling,
     isVisible,

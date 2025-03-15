@@ -20,10 +20,6 @@ onconnect = function (event) {
       broadcastChannel.postMessage({ status: false, transport: "Undefined" });
     } else if (e.data === "reconnect") {
       socket.connect();
-      broadcastChannel.postMessage({
-        status: true,
-        transport: socket.io.engine.transport.name,
-      });
     }
   };
 };

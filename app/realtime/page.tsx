@@ -19,8 +19,13 @@ export default function Page() {
     for (let i = 0; i < 75; i++) x.push(["unsubscribed", "unsubscribed"]);
     return x;
   });
-  const { data, transport, connectionStatus, underlying } = useWorker();
-  const cache = useRef(new CellMeasurerCache());
+  const { data, connectionStatus, worker } = useWorker();
+  const cache = useRef(
+    new CellMeasurerCache({
+      fixedHeight: true,
+      defaultWidth: 500,
+    }),
+  );
   function rowRenderer({ key, index, style, parent }: ListRowProps) {
     const obj = data ? data[index] : null;
     if (!obj) return <div key={key} style={style}></div>;
@@ -135,6 +140,20 @@ export default function Page() {
             Options
           </div>
         </div>
+        <div
+          className="w-max bg-blue-800 flex justify-between px-5 mt-1"
+          onClick={() => {
+            if (connectionStatus && worker) {
+              worker.port.postMessage("disconnect");
+            } else if (worker) {
+              worker.port.postMessage("reconnect");
+            }
+          }}
+        >
+          <div className="w-full text-2xl h-full flex flex-col justify-center">
+            {connectionStatus ? "Disconnect Server" : "Connect to Server"}
+          </div>
+        </div>
         <div className="w-48 flex justify-end px-5 mt-1">
           <div>
             <Dot
@@ -149,7 +168,7 @@ export default function Page() {
       </div>
       <div className="w-full h-full flex rounded-lg">
         <div className="w-[500px] h-full overflow-scroll px-1 bg-gray-100">
-          {data && data.length ? (
+          {data && data.length && data[0].length ? (
             <AutoSizer>
               {({ width, height }) => (
                 <List
@@ -169,12 +188,12 @@ export default function Page() {
             {subscribers && subscribers.length
               ? subscribers.map((obj, idx) => {
                   let text_colr_C, text_colr_P;
-                  if (data && data[idx][0] > 0) {
+                  if (data && data[idx] && data[idx][0] > 0) {
                     text_colr_C = "text-[#007a00]";
                   } else if (data) {
                     text_colr_C = "text-[#d02724]";
                   }
-                  if (data && data[idx][4] > 0) {
+                  if (data && data[idx] && data[idx][4] > 0) {
                     text_colr_P = "text-[#007a00]";
                   } else if (data) {
                     text_colr_P = "text-[#d02724]";
