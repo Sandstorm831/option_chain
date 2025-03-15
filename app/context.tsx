@@ -1,19 +1,24 @@
 "use client";
-import { Children, createContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 export type WorkerData = {
   data: number[][];
   underlying: number;
-  status: boolean;
+  connectionStatus: boolean;
   transport: string;
 };
 
 const WorkerContext = createContext<WorkerData>({
   data: [],
   underlying: 22500,
-  status: false,
+  connectionStatus: false,
   transport: "Undefined",
 });
+
+export const useWorker = () => {
+  return useContext(WorkerContext);
+};
+
 const broadcastChannel = new BroadcastChannel("SocketIOChannel");
 
 export function DataActuator({ children }: { children: React.ReactNode }) {
@@ -22,29 +27,23 @@ export function DataActuator({ children }: { children: React.ReactNode }) {
   const [connectionStatus, setConnectionStatus] = useState(false);
   const [transport, setTransport] = useState("Undefined");
   useEffect(() => {
-    console.log("I am running, hoorayyyyyy");
     if (typeof window !== "undefined") {
       const worker = new window.SharedWorker("/scripts/worker.js");
+      worker.port.start();
       broadcastChannel.addEventListener("message", (e) => {
         if ("data" in e.data) {
-          console.log(e.data);
           setData(e.data.data);
           setUnderlying(e.data.underlying);
         } else {
-          console.log(`status: ${e.data.status}`);
           setConnectionStatus(e.data.status);
           setTransport(e.data.transport);
         }
       });
-      worker.port.start();
       worker.port.onmessage = (e) => {
-        console.log(e.data);
         if ("data" in e.data) {
-          console.log(data);
           setData(e.data.data);
           setUnderlying(e.data.underlying);
         } else {
-          console.log(`status: ${e.data.status}`);
           setConnectionStatus(e.data.status);
           setTransport(e.data.transport);
         }
@@ -56,7 +55,7 @@ export function DataActuator({ children }: { children: React.ReactNode }) {
       value={{
         data: data,
         underlying: underlying,
-        status: connectionStatus,
+        connectionStatus: connectionStatus,
         transport: transport,
       }}
     >
@@ -64,3 +63,17 @@ export function DataActuator({ children }: { children: React.ReactNode }) {
     </WorkerContext.Provider>
   );
 }
+/*
+useEffect(() => {
+  if (typeof window !== "undefined") {
+    const worker = new window.SharedWorker("/scripts/worker.js");
+    broadcastChannel.addEventListener("message", (event) => {
+      console.log(event.data);
+    });
+    worker.port.start();
+    worker.port.onmessage = (e) => {
+      console.log(e.data);
+    };
+  }
+}, []);
+*/

@@ -14,7 +14,18 @@ onconnect = function (event) {
   } else {
     socket.connect();
   }
-  port.onmessage = (e) => {};
+  port.onmessage = (e) => {
+    if (e.data === "disconnect") {
+      socket.disconnect();
+      broadcastChannel.postMessage({ status: false, transport: "Undefined" });
+    } else if (e.data === "reconnect") {
+      socket.connect();
+      broadcastChannel.postMessage({
+        status: true,
+        transport: socket.io.engine.transport.name,
+      });
+    }
+  };
 };
 
 socket.on("disconnect", (reason, details) => {
@@ -32,5 +43,37 @@ socket.on("connect", () => {
 });
 
 socket.on("data", (data) => {
-  broadcastChannel.postMessage({ data: data });
+  broadcastChannel.postMessage(data);
 });
+
+/*
+useEffect(() => {
+  if (socket.connected) {
+    setConnectionStatus(true);
+    setTransport(socket.io.engine.transport.name);
+  } else {
+    socket.connect();
+  }
+  socket.on("disconnect", (reason, details) => {
+    setConnectionStatus(false);
+    setTransport("undefined");
+    socket.io.engine.on("upgrade", (transport) => {
+      setTransport(transport.name);
+    });
+  });
+  socket.on("connect", () => {
+    setConnectionStatus(true);
+    setTransport(socket.io.engine.transport.name);
+    socket.io.engine.on("upgrade", (transport) => {
+      setTransport(transport.name);
+    });
+  });
+  socket.on("data", (data: dataObject) => {
+    setData(data.data);
+    setUnderlying(data.underlying);
+  });
+  return () => {
+    socket.removeAllListeners();
+  };
+}, []);
+*/

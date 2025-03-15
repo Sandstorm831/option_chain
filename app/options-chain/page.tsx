@@ -1,7 +1,6 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
-import { socket } from "../socket";
-import { removeAllListeners } from "node:process";
+import React, { useRef } from "react";
+// import { socket } from "../socket";
 import {
   AutoSizer,
   CellMeasurer,
@@ -9,15 +8,15 @@ import {
   Grid,
   GridCellProps,
 } from "react-virtualized";
-import path from "node:path";
+import { useWorker } from "../context";
 export type dataObject = {
   data: number[][];
   underlying: number;
 };
 
 export default function Home() {
-  const [connectionStatus, setConnectionStatus] = useState(false);
-  const [transportName, setTransportName] = useState("");
+  const { data, transport, connectionStatus, underlying } = useWorker();
+
   const cache = useRef(new CellMeasurerCache());
   function cellRenderer({
     isScrolling,
@@ -81,45 +80,13 @@ export default function Home() {
     );
   }
 
-  useEffect(() => {
-    if (socket.connected) {
-      setConnectionStatus(true);
-      setTransportName(socket.io.engine.transport.name);
-    } else {
-      socket.connect();
-    }
-    socket.on("disconnect", (reason, details) => {
-      setConnectionStatus(false);
-      setTransportName("undefined");
-      socket.io.engine.on("upgrade", (transport) => {
-        setTransportName(transport.name);
-      });
-    });
-    socket.on("connect", () => {
-      setConnectionStatus(true);
-      setTransportName(socket.io.engine.transport.name);
-      socket.io.engine.on("upgrade", (transport) => {
-        setTransportName(transport.name);
-      });
-    });
-    socket.on("data", (data: dataObject) => {
-      setData(data.data);
-      setUnderlying(data.underlying);
-    });
-    return () => {
-      socket.removeAllListeners();
-    };
-  }, []);
-
-  const [data, setData] = useState<number[][]>([[]]);
-  const [underlying, setUnderlying] = useState<number>(0);
   return (
     <div className="flex flex-col justify-center h-screen w-screen p-5">
       <div className="w-full h-24 flex justify-center bg-blue-800 rounded-lg">
         <div className="flex flex-col h-full justify-center text-white text-3xl font-mono">
           Underlying : {underlying} | Connection Status :{" "}
           {connectionStatus ? "Live" : "Disconnected"} | Transport_Method :{" "}
-          {transportName === "" ? "Undefined" : transportName}
+          {transport}
         </div>
       </div>
       <div className="flex flex-col grow w-full mt-5 bg-gray-200 rounded-lg overflow-scroll">

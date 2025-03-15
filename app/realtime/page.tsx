@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { socket } from "../socket";
+// import { socket } from "../socket";
 import { dataObject } from "../options-chain/page";
 import { Dot } from "lucide-react";
 import {
@@ -11,6 +11,7 @@ import {
   List,
   ListRowProps,
 } from "react-virtualized";
+import { useWorker } from "../context";
 
 export default function Page() {
   const [subscribers, setSubscribers] = useState(() => {
@@ -18,8 +19,7 @@ export default function Page() {
     for (let i = 0; i < 75; i++) x.push(["unsubscribed", "unsubscribed"]);
     return x;
   });
-  const [connectionStatus, setConnectionStatus] = useState<boolean>(false);
-  const [data, setData] = useState<number[][]>();
+  const { data, transport, connectionStatus, underlying } = useWorker();
   const cache = useRef(new CellMeasurerCache());
   function rowRenderer({ key, index, style, parent }: ListRowProps) {
     const obj = data ? data[index] : null;
@@ -102,25 +102,25 @@ export default function Page() {
     setSubscribers(temp);
   }
 
-  useEffect(() => {
-    if (socket.connected) {
-      setConnectionStatus(true);
-    }
-    socket.on("disconnect", (reason, details) => {
-      setConnectionStatus(false);
-      socket.io.engine.on("upgrade", (transport) => {});
-    });
-    socket.on("connect", () => {
-      setConnectionStatus(true);
-      socket.io.engine.on("upgrade", (transport) => {});
-    });
-    socket.on("data", (data: dataObject) => {
-      setData(data.data);
-    });
-    return () => {
-      socket.removeAllListeners();
-    };
-  }, []);
+  // useEffect(() => {
+  //   if (socket.connected) {
+  //     setConnectionStatus(true);
+  //   }
+  //   socket.on("disconnect", (reason, details) => {
+  //     setConnectionStatus(false);
+  //     socket.io.engine.on("upgrade", (transport) => {});
+  //   });
+  //   socket.on("connect", () => {
+  //     setConnectionStatus(true);
+  //     socket.io.engine.on("upgrade", (transport) => {});
+  //   });
+  //   socket.on("data", (data: dataObject) => {
+  //     setData(data.data);
+  //   });
+  //   return () => {
+  //     socket.removeAllListeners();
+  //   };
+  // }, []);
 
   return (
     <div className="flex flex-col h-screen w-screen p-5">
@@ -138,12 +138,12 @@ export default function Page() {
         <div className="w-48 flex justify-end px-5 mt-1">
           <div>
             <Dot
-              className={`${socket.connected ? "text-green-500" : "text-red-800"}`}
+              className={`${connectionStatus ? "text-green-600" : "text-red-800"}`}
               size={62}
             />
           </div>
           <div className="w-48 text-2xl h-full flex flex-col justify-center">
-            {socket.connected ? "Live" : "Disconnected"}
+            {connectionStatus ? "Live" : "Disconnected"}
           </div>
         </div>
       </div>
