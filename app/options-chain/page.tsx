@@ -1,7 +1,15 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { socket } from "../socket";
 import { removeAllListeners } from "node:process";
+import {
+  AutoSizer,
+  CellMeasurer,
+  CellMeasurerCache,
+  Grid,
+  GridCellProps,
+} from "react-virtualized";
+import path from "node:path";
 export type dataObject = {
   data: number[][];
   underlying: number;
@@ -10,10 +18,75 @@ export type dataObject = {
 export default function Home() {
   const [connectionStatus, setConnectionStatus] = useState(false);
   const [transportName, setTransportName] = useState("");
+  const cache = useRef(new CellMeasurerCache());
+  function cellRenderer({
+    isScrolling,
+    isVisible,
+    columnIndex,
+    key,
+    rowIndex,
+    style,
+    parent,
+  }: GridCellProps) {
+    const stk = data[rowIndex];
+    const idx = key;
+    let text_colr;
+    let bg_colr;
+    if (columnIndex < 2) {
+      if (stk[2] <= underlying) {
+        bg_colr = "bg-[#f1eed9]";
+      } else {
+        bg_colr = "bg-white";
+      }
+    } else if (columnIndex > 2) {
+      if (stk[2] >= underlying) {
+        bg_colr = "bg-[#f1eed9]";
+      } else {
+        bg_colr = "bg-white";
+      }
+    } else {
+      bg_colr = "bg-white";
+    }
+    if (columnIndex < 2) {
+      if (stk[0] >= 0) {
+        text_colr = "text-[#007a00]";
+      } else {
+        text_colr = "text-[#d02724]";
+      }
+    } else if (columnIndex > 2) {
+      if (stk[4] >= 0) {
+        text_colr = "text-[#007a00]";
+      } else {
+        text_colr = "text-[#d02724]";
+      }
+    } else {
+      text_colr = "text-blue-800";
+    }
+    return (
+      <CellMeasurer
+        key={key}
+        cache={cache.current}
+        parent={parent}
+        rowIndex={rowIndex}
+        columnIndex={columnIndex}
+      >
+        <div className="flex w-full" style={style}>
+          <div
+            className={`flex justify-center w-full text-md font-mono ${text_colr} ${bg_colr} border border-[#e3e3e3]`}
+          >
+            {data[rowIndex][columnIndex]}
+          </div>
+        </div>
+      </CellMeasurer>
+    );
+  }
+
   useEffect(() => {
     if (socket.connected) {
       setConnectionStatus(true);
       setTransportName(socket.io.engine.transport.name);
+    } else {
+      socket.connect();
     }
     socket.on("disconnect", (reason, details) => {
       setConnectionStatus(false);
@@ -42,7 +115,7 @@ export default function Home() {
   const [underlying, setUnderlying] = useState<number>(0);
   return (
     <div className="flex flex-col justify-center h-screen w-screen p-5">
-      <div className="w-full h-36 flex justify-center bg-blue-800 rounded-lg">
+      <div className="w-full h-24 flex justify-center bg-blue-800 rounded-lg">
         <div className="flex flex-col h-full justify-center text-white text-3xl font-mono">
           Underlying : {underlying} | Connection Status :{" "}
           {connectionStatus ? "Live" : "Disconnected"} | Transport_Method :{" "}
@@ -78,63 +151,80 @@ export default function Home() {
           </div>
         </div>
         <div className="flex flex-col grow overflow-scroll">
-          <div className="grid grid-cols-5 grid-rows-[repeat(75,30px)]">
-            {data && data.length
-              ? data.map((stk, idx) => {
-                  return (
-                    <React.Fragment key={idx}>
-                      {stk && stk.length
-                        ? stk.map((val, tidx) => {
-                            let text_colr;
-                            let bg_colr;
-                            if (tidx < 2) {
-                              if (stk[2] <= underlying) {
-                                bg_colr = "bg-[#f1eed9]";
-                              } else {
-                                bg_colr = "bg-white";
-                              }
-                            } else if (tidx > 2) {
-                              if (stk[2] >= underlying) {
-                                bg_colr = "bg-[#f1eed9]";
-                              } else {
-                                bg_colr = "bg-white";
-                              }
-                            } else {
-                              bg_colr = "bg-white";
-                            }
-                            if (tidx < 2) {
-                              if (stk[0] >= 0) {
-                                text_colr = "text-[#007a00]";
-                              } else {
-                                text_colr = "text-[#d02724]";
-                              }
-                            } else if (tidx > 2) {
-                              if (stk[4] >= 0) {
-                                text_colr = "text-[#007a00]";
-                              } else {
-                                text_colr = "text-[#d02724]";
-                              }
-                            } else {
-                              text_colr = "text-blue-800";
-                            }
-                            return (
-                              <div key={tidx} className="flex w-full">
-                                <div
-                                  className={`flex justify-center w-full text-md font-mono ${text_colr} ${bg_colr} border border-[#e3e3e3]`}
-                                >
-                                  {val}
-                                </div>
-                              </div>
-                            );
-                          })
-                        : null}
-                    </React.Fragment>
-                  );
-                })
-              : null}
-          </div>
+          {/* <div className="grid grid-cols-5 grid-rows-[repeat(75,30px)]"> */}
+          {data && data.length ? (
+            <AutoSizer>
+              {({ width, height }) => (
+                <Grid
+                  width={width}
+                  height={height}
+                  rowHeight={30}
+                  deferredMeasurementCache={cache.current}
+                  rowCount={data.length}
+                  columnCount={5}
+                  columnWidth={width / 5}
+                  cellRenderer={cellRenderer}
+                />
+              )}
+            </AutoSizer>
+          ) : null}
+          {/* </div> */}
         </div>
       </div>
     </div>
   );
 }
+
+/*
+data.map((stk, idx) => {
+    return (
+      <React.Fragment key={idx}>
+        {stk && stk.length
+          ? stk.map((val, tidx) => {
+              let text_colr;
+              let bg_colr;
+              if (tidx < 2) {
+                if (stk[2] <= underlying) {
+                  bg_colr = "bg-[#f1eed9]";
+                } else {
+                  bg_colr = "bg-white";
+                }
+              } else if (tidx > 2) {
+                if (stk[2] >= underlying) {
+                  bg_colr = "bg-[#f1eed9]";
+                } else {
+                  bg_colr = "bg-white";
+                }
+              } else {
+                bg_colr = "bg-white";
+              }
+              if (tidx < 2) {
+                if (stk[0] >= 0) {
+                  text_colr = "text-[#007a00]";
+                } else {
+                  text_colr = "text-[#d02724]";
+                }
+              } else if (tidx > 2) {
+                if (stk[4] >= 0) {
+                  text_colr = "text-[#007a00]";
+                } else {
+                  text_colr = "text-[#d02724]";
+                }
+              } else {
+                text_colr = "text-blue-800";
+              }
+              return (
+                <div key={tidx} className="flex w-full">
+                  <div
+                    className={`flex justify-center w-full text-md font-mono ${text_colr} ${bg_colr} border border-[#e3e3e3]`}
+                  >
+                    {val}
+                  </div>
+                </div>
+              );
+            })
+          : null}
+      </React.Fragment>
+    );
+  })
+*/
