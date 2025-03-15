@@ -1,9 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { socket } from "../socket";
 import { dataObject } from "../options-chain/page";
 import { Dot } from "lucide-react";
+import {
+  AutoSizer,
+  CellMeasurer,
+  CellMeasurerCache,
+  List,
+  ListRowProps,
+} from "react-virtualized";
 
 export default function Page() {
   const [subscribers, setSubscribers] = useState(() => {
@@ -13,6 +20,77 @@ export default function Page() {
   });
   const [connectionStatus, setConnectionStatus] = useState<boolean>(false);
   const [data, setData] = useState<number[][]>();
+  const cache = useRef(new CellMeasurerCache());
+  function rowRenderer({ key, index, style, parent }: ListRowProps) {
+    const obj = data ? data[index] : null;
+    if (!obj) return <div key={key} style={style}></div>;
+    let text_colr_C, text_colr_P;
+    if (obj[0] > 0) {
+      text_colr_C = "text-[#007a00]";
+    } else {
+      text_colr_C = "text-[#d02724]";
+    }
+    if (obj[4] > 0) {
+      text_colr_P = "text-[#007a00]";
+    } else {
+      text_colr_P = "text-[#d02724]";
+    }
+    return (
+      <CellMeasurer
+        key={key}
+        cache={cache.current}
+        parent={parent}
+        rowIndex={index}
+        columnIndex={0}
+      >
+        <div style={style}>
+          <div className="w-full h-[50px] flex justify-between bg-white rounded-lg my-1 px-2">
+            <div className="h-full flex flex-col justify-center font-bold">
+              <div className="flex justify-center">{`${obj[2].toString()}C`}</div>
+            </div>
+            <div
+              className={`${text_colr_C} h-full flex flex-col justify-center`}
+            >
+              <div className="flex justify-center">{`${obj[1]}`}</div>
+              <div className="text-sm flex justify-center">{` ${obj[0]} %`}</div>
+            </div>
+            <div
+              className="px-2 w-[120px] h-full rounded-lg bg-blue-800 text-white flex flex-col justify-center hover:opacity-95 cursor-pointer font-bold"
+              onClick={() => subscribeByIdx(index, 0)}
+            >
+              <div className="w-full flex justify-center">
+                {subscribers[index][0] === "subscribed"
+                  ? "Unsubscribe"
+                  : "Subscribe"}
+              </div>
+            </div>
+          </div>
+
+          <div className="w-full h-[50px] flex justify-between bg-white rounded-lg my-1 px-2">
+            <div className="h-full flex flex-col justify-center font-bold">
+              <div className="flex justify-center">{`${obj[2].toString()}P`}</div>
+            </div>
+            <div
+              className={`${text_colr_P} h-full flex flex-col justify-center`}
+            >
+              <div className="flex justify-center">{`${obj[3]}`}</div>
+              <div className="text-sm flex justify-center">{` ${obj[4]} %`}</div>
+            </div>
+            <div
+              className="px-2 w-[120px] h-full rounded-lg bg-blue-800 text-white flex flex-col justify-center hover:opacity-95 cursor-pointer font-bold"
+              onClick={() => subscribeByIdx(index, 1)}
+            >
+              <div className="w-full flex justify-center">
+                {subscribers[index][1] === "subscribed"
+                  ? "Unsubscribe"
+                  : "Subscribe"}
+              </div>
+            </div>
+          </div>
+        </div>
+      </CellMeasurer>
+    );
+  }
 
   function subscribeByIdx(row: number, col: number) {
     const temp = subscribers;
@@ -70,69 +148,21 @@ export default function Page() {
         </div>
       </div>
       <div className="w-full h-full flex rounded-lg">
-        <div className="w-[500px] h-full overflow-scroll px-1 bg-gray-100 grid grid-flow-row auto-row-[30px] grid-cols-1 z-10">
-          {data && data.length
-            ? data.map((obj, idx) => {
-                let text_colr_C, text_colr_P;
-                if (obj[0] > 0) {
-                  text_colr_C = "text-[#007a00]";
-                } else {
-                  text_colr_C = "text-[#d02724]";
-                }
-                if (obj[4] > 0) {
-                  text_colr_P = "text-[#007a00]";
-                } else {
-                  text_colr_P = "text-[#d02724]";
-                }
-                return (
-                  <React.Fragment key={idx}>
-                    <div className="w-full h-[50px] flex justify-between bg-white rounded-lg my-1 px-2">
-                      <div className="h-full flex flex-col justify-center font-bold">
-                        <div className="flex justify-center">{`${obj[2].toString()}C`}</div>
-                      </div>
-                      <div
-                        className={`${text_colr_C} h-full flex flex-col justify-center`}
-                      >
-                        <div className="flex justify-center">{`${obj[1]}`}</div>
-                        <div className="text-sm flex justify-center">{` ${obj[0]} %`}</div>
-                      </div>
-                      <div
-                        className="px-2 w-[120px] h-full rounded-lg bg-blue-800 text-white flex flex-col justify-center hover:opacity-95 cursor-pointer font-bold"
-                        onClick={() => subscribeByIdx(idx, 0)}
-                      >
-                        <div className="w-full flex justify-center">
-                          {subscribers[idx][0] === "subscribed"
-                            ? "Unsubscribe"
-                            : "Subscribe"}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="w-full h-[50px] flex justify-between bg-white rounded-lg my-1 px-2">
-                      <div className="h-full flex flex-col justify-center font-bold">
-                        <div className="flex justify-center">{`${obj[2].toString()}P`}</div>
-                      </div>
-                      <div
-                        className={`${text_colr_P} h-full flex flex-col justify-center`}
-                      >
-                        <div className="flex justify-center">{`${obj[3]}`}</div>
-                        <div className="text-sm flex justify-center">{` ${obj[4]} %`}</div>
-                      </div>
-                      <div
-                        className="px-2 w-[120px] h-full rounded-lg bg-blue-800 text-white flex flex-col justify-center hover:opacity-95 cursor-pointer font-bold"
-                        onClick={() => subscribeByIdx(idx, 1)}
-                      >
-                        <div className="w-full flex justify-center">
-                          {subscribers[idx][1] === "subscribed"
-                            ? "Unsubscribe"
-                            : "Subscribe"}
-                        </div>
-                      </div>
-                    </div>
-                  </React.Fragment>
-                );
-              })
-            : null}
+        <div className="w-[500px] h-full overflow-scroll px-1 bg-gray-100">
+          {data && data.length ? (
+            <AutoSizer>
+              {({ width, height }) => (
+                <List
+                  width={width}
+                  height={height}
+                  rowHeight={108}
+                  deferredMeasurementCache={cache.current}
+                  rowCount={data.length}
+                  rowRenderer={rowRenderer}
+                />
+              )}
+            </AutoSizer>
+          ) : null}
         </div>
         <div className="flex grow px-5">
           <div className="grid grid-cols-4 grid-flow-row auto-rows-[150px] overflow-scroll mb-5 gap-1 w-full">
@@ -223,3 +253,66 @@ export default function Page() {
     </div>
   );
 }
+
+/*
+data.map((obj, idx) => {
+    let text_colr_C, text_colr_P;
+    if (obj[0] > 0) {
+      text_colr_C = "text-[#007a00]";
+    } else {
+      text_colr_C = "text-[#d02724]";
+    }
+    if (obj[4] > 0) {
+      text_colr_P = "text-[#007a00]";
+    } else {
+      text_colr_P = "text-[#d02724]";
+    }
+    return (
+      <React.Fragment key={idx}>
+        <div className="w-full h-[50px] flex justify-between bg-white rounded-lg my-1 px-2">
+          <div className="h-full flex flex-col justify-center font-bold">
+            <div className="flex justify-center">{`${obj[2].toString()}C`}</div>
+          </div>
+          <div
+            className={`${text_colr_C} h-full flex flex-col justify-center`}
+          >
+            <div className="flex justify-center">{`${obj[1]}`}</div>
+            <div className="text-sm flex justify-center">{` ${obj[0]} %`}</div>
+          </div>
+          <div
+            className="px-2 w-[120px] h-full rounded-lg bg-blue-800 text-white flex flex-col justify-center hover:opacity-95 cursor-pointer font-bold"
+            onClick={() => subscribeByIdx(idx, 0)}
+          >
+            <div className="w-full flex justify-center">
+              {subscribers[idx][0] === "subscribed"
+                ? "Unsubscribe"
+                : "Subscribe"}
+            </div>
+          </div>
+        </div>
+
+        <div className="w-full h-[50px] flex justify-between bg-white rounded-lg my-1 px-2">
+          <div className="h-full flex flex-col justify-center font-bold">
+            <div className="flex justify-center">{`${obj[2].toString()}P`}</div>
+          </div>
+          <div
+            className={`${text_colr_P} h-full flex flex-col justify-center`}
+          >
+            <div className="flex justify-center">{`${obj[3]}`}</div>
+            <div className="text-sm flex justify-center">{` ${obj[4]} %`}</div>
+          </div>
+          <div
+            className="px-2 w-[120px] h-full rounded-lg bg-blue-800 text-white flex flex-col justify-center hover:opacity-95 cursor-pointer font-bold"
+            onClick={() => subscribeByIdx(idx, 1)}
+          >
+            <div className="w-full flex justify-center">
+              {subscribers[idx][1] === "subscribed"
+                ? "Unsubscribe"
+                : "Subscribe"}
+            </div>
+          </div>
+        </div>
+      </React.Fragment>
+    );
+  })
+*/
