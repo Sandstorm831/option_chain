@@ -1,7 +1,22 @@
+"use client";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect } from "react";
+const broadcastChannel = new BroadcastChannel("SocketIOChannel");
 
 export default function Home() {
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const worker = new window.SharedWorker("/scripts/worker.js");
+      broadcastChannel.addEventListener("message", (event) => {
+        console.log(event.data);
+      });
+      worker.port.start();
+      worker.port.onmessage = (e) => {
+        console.log(e.data);
+      };
+    }
+  }, []);
   return (
     <div className="flex flex-col justify-center h-screen w-screen">
       <div className="w-full flex justify-center">
