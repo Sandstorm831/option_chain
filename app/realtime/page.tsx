@@ -49,7 +49,7 @@ export default function Page() {
         columnIndex={0}
       >
         <div style={style}>
-          <div className="w-full h-[50px] flex justify-between bg-white rounded-lg my-1 px-2">
+          <div className="w-full h-[50px] flex justify-between bg-white rounded-lg my-1 px-2 font-mono">
             <div className="h-full flex flex-col justify-center font-bold">
               <div className="flex justify-center">{`${obj[2].toString()}C`}</div>
             </div>
@@ -71,7 +71,7 @@ export default function Page() {
             </div>
           </div>
 
-          <div className="w-full h-[50px] flex justify-between bg-white rounded-lg my-1 px-2">
+          <div className="w-full h-[50px] flex justify-between bg-white rounded-lg my-1 px-2 font-mono">
             <div className="h-full flex flex-col justify-center font-bold">
               <div className="flex justify-center">{`${obj[2].toString()}P`}</div>
             </div>
@@ -107,41 +107,32 @@ export default function Page() {
     setSubscribers(temp);
   }
 
-  // useEffect(() => {
-  //   if (socket.connected) {
-  //     setConnectionStatus(true);
-  //   }
-  //   socket.on("disconnect", (reason, details) => {
-  //     setConnectionStatus(false);
-  //     socket.io.engine.on("upgrade", (transport) => {});
-  //   });
-  //   socket.on("connect", () => {
-  //     setConnectionStatus(true);
-  //     socket.io.engine.on("upgrade", (transport) => {});
-  //   });
-  //   socket.on("data", (data: dataObject) => {
-  //     setData(data.data);
-  //   });
-  //   return () => {
-  //     socket.removeAllListeners();
-  //   };
-  // }, []);
-
   return (
     <div className="flex flex-col h-screen w-screen p-5">
-      <div className="w-full h-12 flex justify-center bg-blue-800 rounded-lg">
-        <div className="flex flex-col h-full justify-center text-white text-3xl font-mono">
+      <div className="w-full h-16 flex justify-between px-3 bg-blue-800 rounded-lg">
+        <div className="flex flex-col h-full justify-center text-white xl:text-3xl max-xl:text-lg font-mono">
           Realtime Inspector
         </div>
+        <div className="w-48 flex justify-end">
+          <div>
+            <Dot
+              className={`${connectionStatus ? "text-green-600" : "text-red-800"}`}
+              size={62}
+            />
+          </div>
+          <div className="xl:text-2xl max-xl:text-sm text-white h-full flex flex-col justify-center font-mono">
+            {connectionStatus ? "live" : "disconnected"}
+          </div>
+        </div>
       </div>
-      <div className="w-full h-16 flex rounded-lg justify-between">
-        <div className="w-[500px] bg-gray-100 flex justify-between px-5 mt-1">
-          <div className="w-full text-2xl h-full flex flex-col justify-center">
+      <div className="w-full xl:h-16 max-xl:h-24 flex justify-between bg-gray-100 mt-2 px-3">
+        <div className="w-[500px] bg-gray-100 flex justify-between">
+          <div className="w-full xl:text-2xl max-xl:text-md h-full flex flex-col justify-center font-mono">
             Options
           </div>
         </div>
         <div
-          className="w-max bg-blue-800 flex justify-between px-5 mt-1"
+          className="w-max flex justify-between px-5 my-1 rounded-lg bg-white hover:cursor-pointer shadow-sm hover:shadow-md transition duration-100 font-mono"
           onClick={() => {
             if (connectionStatus && worker) {
               worker.port.postMessage("disconnect");
@@ -150,24 +141,13 @@ export default function Page() {
             }
           }}
         >
-          <div className="w-full text-2xl h-full flex flex-col justify-center">
-            {connectionStatus ? "Disconnect Server" : "Connect to Server"}
-          </div>
-        </div>
-        <div className="w-48 flex justify-end px-5 mt-1">
-          <div>
-            <Dot
-              className={`${connectionStatus ? "text-green-600" : "text-red-800"}`}
-              size={62}
-            />
-          </div>
-          <div className="w-48 text-2xl h-full flex flex-col justify-center">
-            {connectionStatus ? "Live" : "Disconnected"}
+          <div className="w-full xl:text-2xl max-xl:text-sm h-full flex flex-col justify-center">
+            {connectionStatus ? "disconnect server" : "connect to server"}
           </div>
         </div>
       </div>
-      <div className="w-full h-full flex rounded-lg">
-        <div className="w-[500px] h-full overflow-scroll px-1 bg-gray-100">
+      <div className="w-full h-full flex max-2xl:flex-col rounded-lg">
+        <div className="2xl:w-[500px] max-2xl:w-full xl:h-full max-2xl:h-[500px] overflow-scroll px-1 bg-gray-100 pb-1 flex-none">
           {data && data.length && data[0].length ? (
             <AutoSizer>
               {({ width, height }) => (
@@ -183,8 +163,8 @@ export default function Page() {
             </AutoSizer>
           ) : null}
         </div>
-        <div className="flex grow px-5">
-          <div className="grid grid-cols-4 grid-flow-row auto-rows-[150px] overflow-scroll mb-5 gap-1 w-full">
+        <div className="flex 2xl:grow 2xl:px-5">
+          <div className="grid xl:grid-cols-[repeat(4,minmax(250,1fr))] md:max-xl:grid-cols-[repeat(2,minmax(250,1fr))] max-md:grid-cols-[repeat(1,minmax(250,1fr))] grid-flow-row auto-rows-[150px] overflow-scroll mb-5 gap-1 w-full">
             {subscribers && subscribers.length
               ? subscribers.map((obj, idx) => {
                   let text_colr_C, text_colr_P;
@@ -201,7 +181,7 @@ export default function Page() {
                   return (
                     <React.Fragment key={idx}>
                       {obj[0] === "subscribed" ? (
-                        <div className="flex flex-col p-2 bg-gray-50 rounded-lg h-full justify-center">
+                        <div className="flex flex-col p-2 bg-gray-50 rounded-lg h-full justify-center mt-2 font-mono">
                           <div className="flex justify-center font-bold text-xl">
                             {data ? `${data[idx][2]}C` : null}
                           </div>
@@ -232,7 +212,7 @@ export default function Page() {
                         </div>
                       ) : null}
                       {obj[1] === "subscribed" ? (
-                        <div className="flex flex-col p-2 bg-gray-50 rounded-lg h-full justify-center">
+                        <div className="flex flex-col p-2 bg-gray-50 rounded-lg h-full justify-center mt-2 font-mono">
                           <div className="flex justify-center font-bold text-xl">
                             {data ? `${data[idx][2]}P` : null}
                           </div>

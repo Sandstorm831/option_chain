@@ -73,3 +73,25 @@ useEffect(() => {
   };
 }, []);
 */
+
+/*
+useEffect(() => {
+  if (socket.connected) {
+    setConnectionStatus(true);
+  }
+  socket.on("disconnect", (reason, details) => {
+    setConnectionStatus(false);
+    socket.io.engine.on("upgrade", (transport) => {});
+  });
+  socket.on("connect", () => {
+    setConnectionStatus(true);
+    socket.io.engine.on("upgrade", (transport) => {});
+  });
+  socket.on("data", (data: dataObject) => {
+    setData(data.data);
+  });
+  return () => {
+    socket.removeAllListeners();
+  };
+}, []);
+*/
