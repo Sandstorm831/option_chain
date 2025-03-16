@@ -12,6 +12,10 @@ import {
   ListRowProps,
 } from "react-virtualized";
 import { useWorker } from "../context";
+import RealtimeInforbar from "@/components/realtimeInforbar";
+import RealtimeConnectAndOptionBar from "@/components/realtimeConnectbar";
+import RealtimeCallPutTile from "@/components/realtimeCallPutTile";
+import SubscribedCallPutTile from "@/components/subscribedCallPutTile";
 
 export default function Page() {
   const [subscribers, setSubscribers] = useState(() => {
@@ -49,49 +53,22 @@ export default function Page() {
         columnIndex={0}
       >
         <div style={style}>
-          <div className="w-full h-[50px] flex justify-between bg-white rounded-lg my-1 px-2 font-mono">
-            <div className="h-full flex flex-col justify-center font-bold">
-              <div className="flex justify-center">{`${obj[2].toString()}C`}</div>
-            </div>
-            <div
-              className={`${text_colr_C} h-full flex flex-col justify-center`}
-            >
-              <div className="flex justify-center">{`${obj[1]}`}</div>
-              <div className="text-sm flex justify-center">{` ${obj[0]} %`}</div>
-            </div>
-            <div
-              className="px-2 w-[120px] h-full rounded-lg bg-blue-800 text-white flex flex-col justify-center hover:opacity-95 cursor-pointer font-bold"
-              onClick={() => subscribeByIdx(index, 0)}
-            >
-              <div className="w-full flex justify-center">
-                {subscribers[index][0] === "subscribed"
-                  ? "Unsubscribe"
-                  : "Subscribe"}
-              </div>
-            </div>
-          </div>
-
-          <div className="w-full h-[50px] flex justify-between bg-white rounded-lg my-1 px-2 font-mono">
-            <div className="h-full flex flex-col justify-center font-bold">
-              <div className="flex justify-center">{`${obj[2].toString()}P`}</div>
-            </div>
-            <div
-              className={`${text_colr_P} h-full flex flex-col justify-center`}
-            >
-              <div className="flex justify-center">{`${obj[3]}`}</div>
-              <div className="text-sm flex justify-center">{` ${obj[4]} %`}</div>
-            </div>
-            <div
-              className="px-2 w-[120px] h-full rounded-lg bg-blue-800 text-white flex flex-col justify-center hover:opacity-95 cursor-pointer font-bold"
-              onClick={() => subscribeByIdx(index, 1)}
-            >
-              <div className="w-full flex justify-center">
-                {subscribers[index][1] === "subscribed"
-                  ? "Unsubscribe"
-                  : "Subscribe"}
-              </div>
-            </div>
-          </div>
+          <RealtimeCallPutTile
+            callPut="C"
+            obj={obj}
+            text_colr={text_colr_C}
+            subscribeByIdx={subscribeByIdx}
+            index={index}
+            theSubscriber={subscribers[index][0]}
+          />
+          <RealtimeCallPutTile
+            callPut="P"
+            obj={obj}
+            text_colr={text_colr_P}
+            subscribeByIdx={subscribeByIdx}
+            index={index}
+            theSubscriber={subscribers[index][1]}
+          />
         </div>
       </CellMeasurer>
     );
@@ -109,43 +86,11 @@ export default function Page() {
 
   return (
     <div className="flex flex-col h-screen w-screen p-5">
-      <div className="w-full h-16 flex justify-between px-3 bg-blue-800 rounded-lg">
-        <div className="flex flex-col h-full justify-center text-white xl:text-3xl max-xl:text-lg font-mono">
-          Realtime Inspector
-        </div>
-        <div className="w-48 flex justify-end">
-          <div>
-            <Dot
-              className={`${connectionStatus ? "text-green-600" : "text-red-800"}`}
-              size={62}
-            />
-          </div>
-          <div className="xl:text-2xl max-xl:text-sm text-white h-full flex flex-col justify-center font-mono">
-            {connectionStatus ? "live" : "disconnected"}
-          </div>
-        </div>
-      </div>
-      <div className="w-full xl:h-16 max-xl:h-24 flex justify-between bg-gray-100 mt-2 px-3">
-        <div className="w-[500px] bg-gray-100 flex justify-between">
-          <div className="w-full xl:text-2xl max-xl:text-md h-full flex flex-col justify-center font-mono">
-            Options
-          </div>
-        </div>
-        <div
-          className="w-max flex justify-between px-5 my-1 rounded-lg bg-white hover:cursor-pointer shadow-sm hover:shadow-md transition duration-100 font-mono"
-          onClick={() => {
-            if (connectionStatus && worker) {
-              worker.port.postMessage("disconnect");
-            } else if (worker) {
-              worker.port.postMessage("reconnect");
-            }
-          }}
-        >
-          <div className="w-full xl:text-2xl max-xl:text-sm h-full flex flex-col justify-center">
-            {connectionStatus ? "disconnect server" : "connect to server"}
-          </div>
-        </div>
-      </div>
+      <RealtimeInforbar connectionStatus={connectionStatus} />
+      <RealtimeConnectAndOptionBar
+        worker={worker}
+        connectionStatus={connectionStatus}
+      />
       <div className="w-full h-full flex max-2xl:flex-col rounded-lg">
         <div className="2xl:w-[500px] max-2xl:w-full xl:h-full max-2xl:h-[500px] overflow-scroll px-1 bg-gray-100 pb-1 flex-none">
           {data && data.length && data[0].length ? (
@@ -181,66 +126,22 @@ export default function Page() {
                   return (
                     <React.Fragment key={idx}>
                       {obj[0] === "subscribed" ? (
-                        <div className="flex flex-col p-2 bg-gray-50 rounded-lg h-full justify-center mt-2 font-mono">
-                          <div className="flex justify-center font-bold text-xl">
-                            {data ? `${data[idx][2]}C` : null}
-                          </div>
-                          <div className="flex justify-center text-sm">
-                            {data ? `Option Type : Call` : null}
-                          </div>
-                          <div className="flex justify-center text-sm">
-                            {data ? `Option Strike : ${data[idx][2]}` : null}
-                          </div>
-                          <div className="flex justify-center text-sm whitespace-pre-wrap">
-                            <div>Option Price : </div>
-                            <div className={`text-sm ${text_colr_C}`}>
-                              {data ? data[idx][1] : null}
-                            </div>
-                          </div>
-                          <div className="flex justify-center text-sm whitespace-pre-wrap">
-                            <div>Price Change : </div>
-                            <div className={`text-sm ${text_colr_C}`}>
-                              {data ? data[idx][0] : null}%
-                            </div>
-                          </div>
-                          <div
-                            className="w-full flex justify-center text-white font-bold bg-blue-800 rounded-lg mt-2 cursor-pointer"
-                            onClick={() => subscribeByIdx(idx, 0)}
-                          >
-                            Unsubscribe
-                          </div>
-                        </div>
+                        <SubscribedCallPutTile
+                          callPut="C"
+                          dataIdx={data[idx]}
+                          text_colr={text_colr_C}
+                          subscribeByIdx={subscribeByIdx}
+                          idx={idx}
+                        />
                       ) : null}
                       {obj[1] === "subscribed" ? (
-                        <div className="flex flex-col p-2 bg-gray-50 rounded-lg h-full justify-center mt-2 font-mono">
-                          <div className="flex justify-center font-bold text-xl">
-                            {data ? `${data[idx][2]}P` : null}
-                          </div>
-                          <div className="flex justify-center text-sm">
-                            {data ? `Option Type : Put` : null}
-                          </div>
-                          <div className="flex justify-center text-sm">
-                            {data ? `Option Strike : ${data[idx][2]}` : null}
-                          </div>
-                          <div className="flex justify-center text-sm whitespace-pre-wrap">
-                            <div>Option Price : </div>
-                            <div className={`text-sm ${text_colr_P}`}>
-                              {data ? data[idx][3] : null}
-                            </div>
-                          </div>
-                          <div className="flex justify-center text-sm whitespace-pre-wrap">
-                            <div>Price Change : </div>
-                            <div className={`text-sm ${text_colr_P}`}>
-                              {data ? data[idx][4] : null}%
-                            </div>
-                          </div>
-                          <div
-                            className="w-full flex justify-center text-white font-bold bg-blue-800 rounded-lg mt-2 cursor-pointer"
-                            onClick={() => subscribeByIdx(idx, 1)}
-                          >
-                            Unsubscribe
-                          </div>
-                        </div>
+                        <SubscribedCallPutTile
+                          callPut="P"
+                          dataIdx={data[idx]}
+                          text_colr={text_colr_P}
+                          subscribeByIdx={subscribeByIdx}
+                          idx={idx}
+                        />
                       ) : null}
                     </React.Fragment>
                   );
