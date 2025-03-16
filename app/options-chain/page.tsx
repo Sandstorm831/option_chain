@@ -27,8 +27,6 @@ export default function Home() {
     }),
   );
   function cellRenderer({
-    isScrolling,
-    isVisible,
     columnIndex,
     key,
     rowIndex,
@@ -36,7 +34,6 @@ export default function Home() {
     parent,
   }: GridCellProps) {
     const stk = data[rowIndex];
-    const idx = key;
     let text_colr;
     let bg_colr;
     if (columnIndex < 2) {

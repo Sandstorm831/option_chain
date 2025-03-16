@@ -1,9 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 // import { socket } from "../socket";
-import { dataObject } from "../options-chain/page";
-import { Dot } from "lucide-react";
 import {
   AutoSizer,
   CellMeasurer,

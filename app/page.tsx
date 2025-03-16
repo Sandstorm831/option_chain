@@ -1,7 +1,5 @@
 "use client";
-import Image from "next/image";
 import Link from "next/link";
-const broadcastChannel = new BroadcastChannel("SocketIOChannel");
 
 export default function Home() {
   return (
