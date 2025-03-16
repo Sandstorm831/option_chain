@@ -9,6 +9,9 @@ import {
   GridCellProps,
 } from "react-virtualized";
 import { useWorker } from "../context";
+import Infobar from "@/components/infobar";
+import OptionsTableHeader from "@/components/optionsTableHeader";
+import OptionTableDataCell from "@/components/optionsTablsDataCells";
 export type dataObject = {
   data: number[][];
   underlying: number;
@@ -75,13 +78,11 @@ export default function Home() {
         columnIndex={columnIndex}
       >
         <div className="flex w-full" style={style}>
-          <div
-            className={`flex justify-center w-full xl:text-md max-xl:text-sm font-mono ${text_colr} ${bg_colr} border border-[#e3e3e3]`}
-          >
-            <div className="flex flex-col justify-center">
-              {data[rowIndex][columnIndex]}
-            </div>
-          </div>
+          <OptionTableDataCell
+            text_colr={text_colr}
+            bg_colr={bg_colr}
+            cellData={data[rowIndex][columnIndex]}
+          />
         </div>
       </CellMeasurer>
     );
@@ -89,55 +90,13 @@ export default function Home() {
 
   return (
     <div className="flex flex-col justify-center h-screen w-screen p-5">
-      <div className="w-full h-24 flex justify-center bg-blue-800 rounded-lg">
-        <div className="flex flex-col h-full justify-center text-white xl:text-3xl max-xl:px-3 max-xl:text-md font-mono">
-          Underlying : {underlying} | Connection Status :{" "}
-          {connectionStatus ? "Live" : "Disconnected"} | Transport_Method :{" "}
-          {transport}
-        </div>
-      </div>
+      <Infobar
+        underlying={underlying}
+        connectionStatus={connectionStatus}
+        transport={transport}
+      />
       <div className="flex flex-col grow w-full mt-5 bg-gray-200 rounded-lg overflow-scroll">
-        <div className="w-full flex-none font-mono">
-          <div className="flex">
-            <div className="flex w-full bg-blue-800 xl:border-r-2 max-xl:border-r border-white text-white h-max">
-              <div className="flex justify-center w-full xl:text-xl max-xl:text-sm">
-                Calls
-              </div>
-            </div>
-            <div className="flex w-full bg-blue-800 text-white h-max">
-              <div className="flex justify-center w-full xl:text-xl max-xl:text-sm">
-                Puts
-              </div>
-            </div>
-          </div>
-          <div className="flex border-t-2 border-white">
-            <div className="flex w-full xl:border-r-2 max-xl:border-r border-white bg-blue-800 text-white h-max">
-              <div className="flex justify-center w-full xl:text-xl max-xl:text-sm">
-                Change
-              </div>
-            </div>
-            <div className="flex w-full xl:border-r-2 max-xl:border-r border-white bg-blue-800 text-white h-max">
-              <div className="flex justify-center w-full xl:text-xl max-xl:text-sm">
-                Price
-              </div>
-            </div>
-            <div className="flex w-full xl:border-r-2 max-xl:border-r border-white bg-blue-800 text-white h-max">
-              <div className="flex justify-center w-full xl:text-xl max-xl:text-sm">
-                Strike
-              </div>
-            </div>
-            <div className="flex w-full xl:border-r-2 max-xl:border-r border-white bg-blue-800 text-white h-max">
-              <div className="flex justify-center w-full xl:text-xl max-xl:text-sm">
-                Price
-              </div>
-            </div>
-            <div className="flex w-full bg-blue-800 text-white h-max">
-              <div className="flex justify-center w-full xl:text-xl max-xl:text-sm">
-                Change
-              </div>
-            </div>
-          </div>
-        </div>
+        <OptionsTableHeader />
         <div className="flex flex-col grow overflow-scroll">
           {data && data.length ? (
             <AutoSizer>
