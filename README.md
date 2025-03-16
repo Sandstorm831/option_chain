@@ -13,8 +13,8 @@
 
   <ol>
     <li><a href="#about-the-project">About The Project</a></li>
-    <li><a href="#prerequisites">Prerequisites</a></li>
     <li><a href="#built-with">Built with</a></li>
+    <li><a href="#prerequisites">Prerequisites</a></li>
     <li><a href="#installation">Installation</a></li>
     <li><a href="#license">License</a></li>
   </ol>
