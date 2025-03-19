@@ -15,7 +15,10 @@ onconnect = function (event) {
     socket.connect();
   }
   port.onmessage = (e) => {
-    if (e.data === "disconnect") {
+    if (typeof e.data !== "string" && e.data.length) {
+      console.log("I am sharing the data");
+      socket.emit("tokens", e.data[1]);
+    } else if (e.data === "disconnect") {
       socket.disconnect();
       broadcastChannel.postMessage({ status: false, transport: "Undefined" });
     } else if (e.data === "reconnect") {
