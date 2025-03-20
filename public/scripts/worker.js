@@ -4,6 +4,7 @@ const broadcastChannel = new BroadcastChannel("SocketIOChannel");
 const idToPort = {};
 const xhr = new XMLHttpRequest();
 let yesterData = {};
+let yesterDataFetched = false;
 const initialStrikeN = 18000;
 const initialStrikeS = 68000;
 
@@ -12,6 +13,7 @@ xhr.addEventListener("load", (e) => {
   yesterData = JSON.parse(xhr.responseText);
   console.log(yesterData);
   broadcastChannel.postMessage(yesterData);
+  yesterDataFetched = true;
 });
 xhr.addEventListener("error", (e) => {
   console.log(e);
@@ -53,13 +55,18 @@ onconnect = function (event) {
       broadcastChannel.postMessage({ status: false, transport: "Undefined" });
     } else if (e.data === "reconnect") {
       socket.connect();
+    } else if (e.data === "yesterdata") {
+      if (yesterDataFetched) broadcastChannel.postMessage(yesterData);
+      else broadcastChannel.postMessage({ requestagain: "requestagain" });
     } else if (e.data[0] === "optionchain") {
       broadcastChannel.postMessage({
         status: socket.connected,
         transport: socket.io.engine.transport.name,
       });
-      socket.emit(e.data[0], e.data[1]);
-      console.log(`sent event ${e.data[0]} with data ${e.data[1]}`);
+      socket.emit(e.data[0], e.data[1], e.data[2]);
+      console.log(
+        `sent event ${e.data[0]} with data ${e.data[1]} with id : ${e.data[2]}`,
+      );
     } else if (e.data[0] === "realtime") {
       broadcastChannel.postMessage({
         status: socket.connected,
@@ -92,11 +99,11 @@ socket.on("connect", () => {
   });
 });
 
-socket.on("data", (data) => {
-  broadcastChannel.postMessage(data);
-});
+// socket.on("data", (data) => {
+//   broadcastChannel.postMessage(data);
+// });
 
-socket.on("optionchaindata", (underlying, data) => {
+socket.on("optionchaindata", (underlying, data, id) => {
   console.log("recieved optionchaindata");
   console.log(data);
   console.log(underlying);
@@ -120,7 +127,7 @@ socket.on("optionchaindata", (underlying, data) => {
     );
     xdata.push(x);
   }
-  broadcastChannel.postMessage({ data: xdata, underlying: underlying });
+  broadcastChannel.postMessage({ data: xdata, underlying: underlying, id: id });
 });
 
 socket.on("realtimedata", (data) => {

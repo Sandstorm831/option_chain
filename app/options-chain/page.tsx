@@ -14,7 +14,7 @@ import {
   Grid,
   GridCellProps,
 } from "react-virtualized";
-import { tokenVal, useWorker, yesterPriceData } from "../context";
+import { tokenVal, uident, useWorker, yesterPriceData } from "../context";
 import Infobar from "@/components/infobar";
 import OptionsTableHeader from "@/components/optionsTableHeader";
 import OptionTableDataCell from "@/components/optionsTablsDataCells";
@@ -56,12 +56,12 @@ function useUpdates(
     for (let i = 0; i < updates.length; i++) {
       if (updates[i].token === subscribed) {
         if (setUnderlying) setUnderlying(updates[i].val);
-      } else {
+      } else if (updates[i].token.length > 1) {
         if (temp.length < 75) break;
         const [index, priceIndex, changeIndex, yesterIndex] = getIndexfromToken(
           updates[i].token,
         );
-        // console.log(temp.length, index, updates[i].token);
+        console.log(temp.length, index, updates[i].token);
         temp[index][priceIndex] = updates[i].val;
         temp[index][changeIndex] = calculatePercentageChange(
           updates[i].val,
@@ -74,6 +74,22 @@ function useUpdates(
     if (setData) setData(temp);
   }, [updates]);
 }
+
+// function getNiftySensexFromToken(token: string) {
+//   const num = Number(token.slice(0, token.length - 1));
+//   return num < 30000 ? "N" : "S";
+// }
+
+// function useXdata(
+//   xdata: number[][],
+//   data: number[][],
+//   setData: Dispatch<SetStateAction<number[][]>>,
+//   subscribed: string,
+// ) {
+//   useEffect(() => {
+//     const temp = data;
+//   }, [xdata]);
+// }
 
 export default function Home() {
   const {
@@ -92,9 +108,9 @@ export default function Home() {
 
   useEffect(() => {
     if (worker) {
-      worker.port.postMessage(["optionchain", subscribed]);
+      worker.port.postMessage(["optionchain", subscribed, uident]);
+      worker.port.postMessage("yesterdata");
     }
-
     return () => {
       if (worker) {
         worker.port.postMessage(["release", subscribed]);
@@ -179,7 +195,7 @@ export default function Home() {
           onClick={() => {
             if (subscribed !== "N") {
               worker?.port.postMessage(["release", "S"]);
-              worker?.port.postMessage(["optionchain", "N"]);
+              worker?.port.postMessage(["optionchain", "N", uident]);
               if (setData) setData([]);
               setSubscribed("N");
             }
@@ -192,7 +208,7 @@ export default function Home() {
           onClick={() => {
             if (subscribed !== "S") {
               worker?.port.postMessage(["release", "N"]);
-              worker?.port.postMessage(["optionchain", "S"]);
+              worker?.port.postMessage(["optionchain", "S", uident]);
               if (setData) setData([]);
               setSubscribed("S");
             }

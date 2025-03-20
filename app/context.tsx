@@ -7,6 +7,9 @@ import React, {
   Dispatch,
   SetStateAction,
 } from "react";
+import { uid } from "uid";
+
+export const uident = uid(12);
 
 export type tokenVal = {
   token: string;
@@ -83,12 +86,14 @@ export const useWorker = () => {
 const broadcastChannel = new BroadcastChannel("SocketIOChannel");
 
 function fillStrikes() {
+  strikes.length = 0;
   for (let i = 0; i < yesterPriceData.yesterOptionPrice.N.length; i++) {
     strikes.push(yesterPriceData.yesterOptionPrice.N[i][2]);
   }
   for (let i = 0; i < yesterPriceData.yesterOptionPrice.N.length; i++) {
     strikes.push(yesterPriceData.yesterOptionPrice.S[i][2]);
   }
+  console.log("logging strikes");
   console.log(strikes);
 }
 
@@ -111,7 +116,7 @@ export function DataActuator({ children }: { children: React.ReactNode }) {
       worker.port.start();
       setSharedWorker(worker);
       broadcastChannel.addEventListener("message", (e) => {
-        if ("data" in e.data) {
+        if ("data" in e.data && e.data.id === uident) {
           setData(e.data.data);
           setUnderlying(e.data.underlying);
         } else if ("status" in e.data) {
@@ -122,6 +127,10 @@ export function DataActuator({ children }: { children: React.ReactNode }) {
           yesterPriceData.yesterPriceS = e.data.yesterPriceS;
           yesterPriceData.yesterOptionPrice = e.data.yesterOptionPrice;
           fillStrikes();
+        } else if ("requestagain" in e.data) {
+          setTimeout(() => {
+            worker.port.postMessage("yesterdata");
+          }, 1000);
         } else if ("tokenval" in e.data) {
           console.log("hey, tokenval");
           const temp = realtimeData;

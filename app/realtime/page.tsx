@@ -105,6 +105,10 @@ export default function Page() {
 
   useUpdate(updates, realtimedata, subscribers, setRealtimeData);
 
+  useEffect(() => {
+    if (worker) worker.port.postMessage("yesterdata");
+  }, []);
+
   function rowRenderer({ key, index, style, parent }: ListRowProps) {
     const obj = strikes ? strikes[index] : null;
     if (!obj) return <div key={key} style={style}></div>;

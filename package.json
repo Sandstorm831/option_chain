@@ -15,7 +15,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-virtualized": "^9.22.6",
-    "socket.io-client": "^4.8.1"
+    "socket.io-client": "^4.8.1",
+    "uid": "^2.0.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

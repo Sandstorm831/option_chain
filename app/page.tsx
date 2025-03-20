@@ -1,7 +1,14 @@
 "use client";
 import Link from "next/link";
+import { useEffect } from "react";
+import { useWorker } from "./context";
 
 export default function Home() {
+  const { worker } = useWorker();
+  useEffect(() => {
+    if (worker) worker.port.postMessage("yesterdata");
+  }, []);
+
   return (
     <div className="flex flex-col justify-center h-screen w-screen">
       <div className="w-full flex justify-center">
