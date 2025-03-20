@@ -49,20 +49,25 @@ function useUpdates(
   setData: Dispatch<SetStateAction<number[][]>> | null,
   setUnderlying: Dispatch<SetStateAction<number>> | null,
   updates: tokenVal[],
+  subscribed: string,
 ) {
   useEffect(() => {
     const temp = data;
     for (let i = 0; i < updates.length; i++) {
-      if (updates[i].token === "N") {
+      if (updates[i].token === subscribed) {
         if (setUnderlying) setUnderlying(updates[i].val);
       } else {
+        if (temp.length < 75) break;
         const [index, priceIndex, changeIndex, yesterIndex] = getIndexfromToken(
           updates[i].token,
         );
+        // console.log(temp.length, index, updates[i].token);
         temp[index][priceIndex] = updates[i].val;
         temp[index][changeIndex] = calculatePercentageChange(
           updates[i].val,
-          yesterPriceData.yesterOptionPrice.N[index][yesterIndex],
+          subscribed === "N"
+            ? yesterPriceData.yesterOptionPrice.N[index][yesterIndex]
+            : yesterPriceData.yesterOptionPrice.S[index][yesterIndex],
         );
       }
     }
@@ -83,16 +88,16 @@ export default function Home() {
   } = useWorker();
   const [subscribed, setSubscribed] = useState("N");
 
-  useUpdates(data, setData, setUnderlying, updates);
+  useUpdates(data, setData, setUnderlying, updates, subscribed);
 
   useEffect(() => {
     if (worker) {
-      worker.port.postMessage(["optionchain", "N"]);
+      worker.port.postMessage(["optionchain", subscribed]);
     }
 
     return () => {
       if (worker) {
-        worker.port.postMessage(["release", "N"]);
+        worker.port.postMessage(["release", subscribed]);
       }
     };
   }, []);
@@ -169,6 +174,34 @@ export default function Home() {
         connectionStatus={connectionStatus}
         transport={transport}
       />
+      <select className="flex justify-center text-xl bg-blue-800 mt-2 mb-1 text-white px-2 rounded-lg">
+        <option
+          onClick={() => {
+            if (subscribed !== "N") {
+              worker?.port.postMessage(["release", "S"]);
+              worker?.port.postMessage(["optionchain", "N"]);
+              if (setData) setData([]);
+              setSubscribed("N");
+            }
+          }}
+          value={"N"}
+        >
+          Nifty
+        </option>
+        <option
+          onClick={() => {
+            if (subscribed !== "S") {
+              worker?.port.postMessage(["release", "N"]);
+              worker?.port.postMessage(["optionchain", "S"]);
+              if (setData) setData([]);
+              setSubscribed("S");
+            }
+          }}
+          value={"S"}
+        >
+          Sensex
+        </option>
+      </select>
       <div className="flex flex-col grow w-full mt-5 bg-gray-200 rounded-lg overflow-scroll">
         <OptionsTableHeader />
         <div className="flex flex-col grow overflow-scroll">
