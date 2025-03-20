@@ -1,5 +1,12 @@
 "use client";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  Dispatch,
+  SetStateAction,
+} from "react";
 
 export type tokenVal = {
   token: string;
@@ -27,6 +34,9 @@ export type WorkerData = {
   connectionStatus: boolean;
   transport: string;
   worker: SharedWorker | null;
+  updates: tokenVal[];
+  setData: Dispatch<SetStateAction<number[][]>> | null;
+  setUnderlying: Dispatch<SetStateAction<number>> | null;
 };
 
 const WorkerContext = createContext<WorkerData>({
@@ -35,6 +45,9 @@ const WorkerContext = createContext<WorkerData>({
   connectionStatus: false,
   transport: "Undefined",
   worker: null,
+  updates: [],
+  setData: null,
+  setUnderlying: null,
 });
 
 export const useWorker = () => {
@@ -89,6 +102,9 @@ export function DataActuator({ children }: { children: React.ReactNode }) {
         connectionStatus: connectionStatus,
         transport: transport,
         worker: sharedWorker,
+        updates: updates,
+        setData: setData,
+        setUnderlying: setUnderlying,
       }}
     >
       {children}

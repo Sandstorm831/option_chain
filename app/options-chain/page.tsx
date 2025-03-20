@@ -1,5 +1,11 @@
 "use client";
-import React, { useEffect, useRef } from "react";
+import React, {
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 // import { socket } from "../socket";
 import {
   AutoSizer,
@@ -8,7 +14,7 @@ import {
   Grid,
   GridCellProps,
 } from "react-virtualized";
-import { useWorker } from "../context";
+import { tokenVal, useWorker, yesterPriceData } from "../context";
 import Infobar from "@/components/infobar";
 import OptionsTableHeader from "@/components/optionsTableHeader";
 import OptionTableDataCell from "@/components/optionsTablsDataCells";
@@ -16,9 +22,68 @@ export type dataObject = {
   data: number[][];
   underlying: number;
 };
+const initialStrikeN = 18000;
+const initialStrikeS = 68000;
+
+function getIndexfromToken(token: string) {
+  let index, subIndex, percInd, yesterIndex;
+  const num = Number(token.slice(0, token.length - 1));
+  const sym = token[token.length - 1];
+  subIndex = sym === "C" ? 1 : 3;
+  percInd = sym === "C" ? 0 : 4;
+  yesterIndex = sym === "C" ? 0 : 1;
+  if (num < 30000) {
+    index = (num - initialStrikeN) / 100;
+  } else {
+    index = (num - initialStrikeS) / 100;
+  }
+  return [index, subIndex, percInd, yesterIndex];
+}
+
+function calculatePercentageChange(val: number, anchor: number) {
+  return Number((((val - anchor) / anchor) * 100).toFixed(2));
+}
+
+function useUpdates(
+  data: number[][],
+  setData: Dispatch<SetStateAction<number[][]>> | null,
+  setUnderlying: Dispatch<SetStateAction<number>> | null,
+  updates: tokenVal[],
+) {
+  useEffect(() => {
+    const temp = data;
+    for (let i = 0; i < updates.length; i++) {
+      if (updates[i].token === "N") {
+        if (setUnderlying) setUnderlying(updates[i].val);
+      } else {
+        const [index, priceIndex, changeIndex, yesterIndex] = getIndexfromToken(
+          updates[i].token,
+        );
+        temp[index][priceIndex] = updates[i].val;
+        temp[index][changeIndex] = calculatePercentageChange(
+          updates[i].val,
+          yesterPriceData.yesterOptionPrice.N[index][yesterIndex],
+        );
+      }
+    }
+    if (setData) setData(temp);
+  }, [updates]);
+}
 
 export default function Home() {
-  const { data, transport, connectionStatus, underlying, worker } = useWorker();
+  const {
+    data,
+    setData,
+    transport,
+    connectionStatus,
+    underlying,
+    worker,
+    updates,
+    setUnderlying,
+  } = useWorker();
+  const [subscribed, setSubscribed] = useState("N");
+
+  useUpdates(data, setData, setUnderlying, updates);
 
   useEffect(() => {
     if (worker) {
