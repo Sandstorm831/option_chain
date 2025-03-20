@@ -1,6 +1,13 @@
 "use client";
-
-import React, { useRef, useState } from "react";
+const initialStrikeN = 18000;
+const initialStrikeS = 68000;
+import React, {
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 // import { socket } from "../socket";
 import {
   AutoSizer,
@@ -9,39 +16,109 @@ import {
   List,
   ListRowProps,
 } from "react-virtualized";
-import { useWorker } from "../context";
+import { strikes, tokenVal, useWorker, yesterPriceData } from "../context";
 import RealtimeInforbar from "@/components/realtimeInforbar";
 import RealtimeConnectAndOptionBar from "@/components/realtimeConnectbar";
-import RealtimeCallPutTile from "@/components/realtimeCallPutTile";
-import SubscribedCallPutTile from "@/components/subscribedCallPutTile";
+import RealtimeCallPutTileTwo from "@/components/realtimeCallPutTile2";
+import SubscribedCallPutTile2 from "@/components/subscribedCallPutTile2";
+
+function calculatePercentageChange(val: number, anchor: number) {
+  return Number((((val - anchor) / anchor) * 100).toFixed(2));
+}
+
+function getTokenFromCoorindates(row: number, col: number) {
+  let token: string;
+  if (row < 75) {
+    token = `${initialStrikeN + row * 100}${col === 0 ? "C" : "P"}`;
+  } else {
+    token = `${initialStrikeS + (row - 75) * 100}${col === 0 ? "C" : "P"}`;
+  }
+  return token;
+}
+
+let intval: NodeJS.Timeout | null = null;
+
+function getCoordinatesFromToken(token: string) {
+  const num = Number(token.slice(0, token.length - 1));
+  const sym = token[token.length - 1];
+  let subindex, index;
+  subindex = sym === "C" ? 0 : 1;
+  if (num < 30000) {
+    index = (num - initialStrikeN) / 100;
+  } else {
+    index = (num - initialStrikeS) / 100;
+    index += 75;
+  }
+  return [index, subindex];
+}
+
+function useUpdate(
+  updates: tokenVal[],
+  realtimedata: number[][][],
+  subscribers: string[][],
+  setRealtimeData: Dispatch<SetStateAction<number[][][]>> | null,
+) {
+  useEffect(() => {
+    const temp = realtimedata;
+    for (let i = 0; i < updates.length; i++) {
+      if (updates[i].token.length === 1) continue;
+      else {
+        const token = updates[i].token;
+        const [index, subindex] = getCoordinatesFromToken(token);
+        console.log(subscribers.length, index);
+        if (subscribers[index][subindex] === "subscribed") {
+          const percChange = calculatePercentageChange(
+            updates[i].val,
+            index >= 75
+              ? yesterPriceData.yesterOptionPrice.S[index - 75][subindex]
+              : yesterPriceData.yesterOptionPrice.N[index][subindex],
+          );
+          temp[index][subindex] = [updates[i].val, percChange];
+        }
+      }
+    }
+    if (setRealtimeData) setRealtimeData(temp);
+  }, [updates]);
+}
 
 export default function Page() {
   const [subscribers, setSubscribers] = useState(() => {
     const x = [];
-    for (let i = 0; i < 75; i++) x.push(["unsubscribed", "unsubscribed"]);
+    for (let i = 0; i < 150; i++) x.push(["unsubscribed", "unsubscribed"]);
     return x;
   });
-  const { data, connectionStatus, worker } = useWorker();
+  const {
+    setRealtimeData,
+    updates,
+    connectionStatus,
+    worker,
+    realtimedata,
+    setTrigger,
+  } = useWorker();
+  // const [trigger, setTrigger] = useState<boolean>(false);
   const cache = useRef(
     new CellMeasurerCache({
       fixedHeight: true,
       defaultWidth: 500,
     }),
   );
+
+  useUpdate(updates, realtimedata, subscribers, setRealtimeData);
+
   function rowRenderer({ key, index, style, parent }: ListRowProps) {
-    const obj = data ? data[index] : null;
+    const obj = strikes ? strikes[index] : null;
     if (!obj) return <div key={key} style={style}></div>;
     let text_colr_C, text_colr_P;
-    if (obj[0] > 0) {
-      text_colr_C = "text-[#007a00]";
-    } else {
-      text_colr_C = "text-[#d02724]";
-    }
-    if (obj[4] > 0) {
-      text_colr_P = "text-[#007a00]";
-    } else {
-      text_colr_P = "text-[#d02724]";
-    }
+    // if (obj[0] > 0) {
+    //   text_colr_C = "text-[#007a00]";
+    // } else {
+    //   text_colr_C = "text-[#d02724]";
+    // }
+    // if (obj[4] > 0) {
+    //   text_colr_P = "text-[#007a00]";
+    // } else {
+    //   text_colr_P = "text-[#d02724]";
+    // }
     return (
       <CellMeasurer
         key={key}
@@ -51,18 +128,16 @@ export default function Page() {
         columnIndex={0}
       >
         <div style={style}>
-          <RealtimeCallPutTile
+          <RealtimeCallPutTileTwo
             callPut="C"
-            obj={obj}
-            text_colr={text_colr_C}
+            strike={obj}
             subscribeByIdx={subscribeByIdx}
             index={index}
             theSubscriber={subscribers[index][0]}
           />
-          <RealtimeCallPutTile
+          <RealtimeCallPutTileTwo
             callPut="P"
-            obj={obj}
-            text_colr={text_colr_P}
+            strike={obj}
             subscribeByIdx={subscribeByIdx}
             index={index}
             theSubscriber={subscribers[index][1]}
@@ -73,13 +148,18 @@ export default function Page() {
   }
 
   function subscribeByIdx(row: number, col: number) {
+    if (intval) clearInterval(intval);
     const temp = subscribers;
+    const token = getTokenFromCoorindates(row, col);
     if (temp[row][col] === "subscribed") {
       temp[row][col] = "unsubscribed";
+      worker?.port.postMessage(["release", token]);
     } else {
       temp[row][col] = "subscribed";
+      worker?.port.postMessage(["realtime", token]);
     }
     setSubscribers(temp);
+    if (setTrigger) setTrigger((x) => !x);
   }
 
   return (
@@ -91,7 +171,7 @@ export default function Page() {
       />
       <div className="w-full h-full flex max-2xl:flex-col rounded-lg">
         <div className="2xl:w-[500px] max-2xl:w-full xl:h-full max-2xl:h-[500px] overflow-scroll px-1 bg-gray-100 pb-1 flex-none">
-          {data && data.length && data[0].length ? (
+          {strikes && strikes.length ? (
             <AutoSizer>
               {({ width, height }) => (
                 <List
@@ -99,7 +179,7 @@ export default function Page() {
                   height={height}
                   rowHeight={108}
                   deferredMeasurementCache={cache.current}
-                  rowCount={data.length}
+                  rowCount={strikes.length}
                   rowRenderer={rowRenderer}
                 />
               )}
@@ -111,31 +191,49 @@ export default function Page() {
             {subscribers && subscribers.length
               ? subscribers.map((obj, idx) => {
                   let text_colr_C, text_colr_P;
-                  if (data && data[idx] && data[idx][0] > 0) {
+                  if (
+                    realtimedata[idx][0].length > 1 &&
+                    realtimedata[idx][0][1] > 0
+                  ) {
                     text_colr_C = "text-[#007a00]";
-                  } else if (data) {
+                  } else if (realtimedata[idx][0].length > 1) {
                     text_colr_C = "text-[#d02724]";
                   }
-                  if (data && data[idx] && data[idx][4] > 0) {
+                  if (
+                    realtimedata[idx][1].length > 1 &&
+                    realtimedata[idx][1][1] > 0
+                  ) {
                     text_colr_P = "text-[#007a00]";
-                  } else if (data) {
+                  } else if (realtimedata[idx][1].length > 0) {
                     text_colr_P = "text-[#d02724]";
                   }
+                  // const realtimedataIdxCall = realtimedata[idx][0];
+                  // const realtimedataIdxPut = realtimedata[idx][1];
+                  // if (realtimedataIdxCall.length > 0) {
+                  //   console.log(`call : ${realtimedataIdxCall}`);
+                  //   console.log(idx, 0);
+                  // }
+                  // if (realtimedataIdxPut.length > 0) {
+                  //   console.log(`call : ${realtimedataIdxPut}`);
+                  //   console.log(idx, 1);
+                  // }
                   return (
                     <React.Fragment key={idx}>
                       {obj[0] === "subscribed" ? (
-                        <SubscribedCallPutTile
+                        <SubscribedCallPutTile2
+                          strike={strikes[idx]}
                           callPut="C"
-                          dataIdx={data[idx]}
+                          dataIdx={realtimedata[idx][0]}
                           text_colr={text_colr_C}
                           subscribeByIdx={subscribeByIdx}
                           idx={idx}
                         />
                       ) : null}
                       {obj[1] === "subscribed" ? (
-                        <SubscribedCallPutTile
+                        <SubscribedCallPutTile2
+                          strike={strikes[idx]}
                           callPut="P"
-                          dataIdx={data[idx]}
+                          dataIdx={realtimedata[idx][1]}
                           text_colr={text_colr_P}
                           subscribeByIdx={subscribeByIdx}
                           idx={idx}

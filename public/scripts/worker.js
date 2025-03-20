@@ -4,16 +4,34 @@ const broadcastChannel = new BroadcastChannel("SocketIOChannel");
 const idToPort = {};
 const xhr = new XMLHttpRequest();
 let yesterData = {};
+const initialStrikeN = 18000;
+const initialStrikeS = 68000;
 
 xhr.open("GET", "http://localhost:8080/init");
 xhr.addEventListener("load", (e) => {
   yesterData = JSON.parse(xhr.responseText);
+  console.log(yesterData);
   broadcastChannel.postMessage(yesterData);
 });
 xhr.addEventListener("error", (e) => {
   console.log(e);
 });
 xhr.send();
+
+function getIndexfromToken(token) {
+  let index, subIndex, percInd, yesterIndex;
+  const num = Number(token.slice(0, token.length - 1));
+  const sym = token[token.length - 1];
+  subIndex = sym === "C" ? 1 : 3;
+  percInd = sym === "C" ? 0 : 4;
+  yesterIndex = sym === "C" ? 0 : 1;
+  if (num < 30000) {
+    index = (num - initialStrikeN) / 100;
+  } else {
+    index = (num - initialStrikeS) / 100;
+  }
+  return [index, subIndex, percInd, yesterIndex];
+}
 
 function calculatePercentageChange(val, anchor) {
   return Number((((val - anchor) / anchor) * 100).toFixed(2));
@@ -36,6 +54,13 @@ onconnect = function (event) {
     } else if (e.data === "reconnect") {
       socket.connect();
     } else if (e.data[0] === "optionchain") {
+      broadcastChannel.postMessage({
+        status: socket.connected,
+        transport: socket.io.engine.transport.name,
+      });
+      socket.emit(e.data[0], e.data[1]);
+      console.log(`sent event ${e.data[0]} with data ${e.data[1]}`);
+    } else if (e.data[0] === "realtime") {
       broadcastChannel.postMessage({
         status: socket.connected,
         transport: socket.io.engine.transport.name,
@@ -96,6 +121,35 @@ socket.on("optionchaindata", (underlying, data) => {
     xdata.push(x);
   }
   broadcastChannel.postMessage({ data: xdata, underlying: underlying });
+});
+
+socket.on("realtimedata", (data) => {
+  console.log("recieved realtimedata");
+  console.log(data);
+  const [index, subIndex, percInd, yesterIndex] = getIndexfromToken(data.token);
+  let chg;
+  if (Number(data.token.slice(0, data.token.length - 1)) < 30000)
+    chg = calculatePercentageChange(
+      data.tokenval,
+      yesterData.yesterOptionPrice.N[index][yesterIndex],
+    );
+  else
+    chg = calculatePercentageChange(
+      data.tokenval,
+      yesterData.yesterOptionPrice.S[index][yesterIndex],
+    );
+  console.log("realtimedata before broadcasting");
+  broadcastChannel.postMessage({
+    token: data.token,
+    tokenval: data.tokenval,
+    tokenChg: chg,
+  });
+  console.log("realtimedata recieved and broadcasted");
+  console.log({
+    token: data.token,
+    tokenval: data.tokenval,
+    tokenChg: chg,
+  });
 });
 
 socket.on("update", (data) => {
