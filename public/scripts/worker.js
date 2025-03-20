@@ -1,8 +1,23 @@
 importScripts("socket.io.js");
-
 let socket = io("http://localhost:8080");
 const broadcastChannel = new BroadcastChannel("SocketIOChannel");
 const idToPort = {};
+const xhr = new XMLHttpRequest();
+let yesterData = {};
+
+xhr.open("GET", "http://localhost:8080/init");
+xhr.addEventListener("load", (e) => {
+  yesterData = JSON.parse(xhr.responseText);
+  broadcastChannel.postMessage(yesterData);
+});
+xhr.addEventListener("error", (e) => {
+  console.log(e);
+});
+xhr.send();
+
+function calculatePercentageChange(val, anchor) {
+  return Number((((val - anchor) / anchor) * 100).toFixed(2));
+}
 
 onconnect = function (event) {
   const port = event.ports[0];
@@ -15,14 +30,25 @@ onconnect = function (event) {
     socket.connect();
   }
   port.onmessage = (e) => {
-    if (typeof e.data !== "string" && e.data.length) {
-      console.log("I am sharing the data");
-      socket.emit("tokens", e.data[1]);
-    } else if (e.data === "disconnect") {
+    if (e.data === "disconnect") {
       socket.disconnect();
       broadcastChannel.postMessage({ status: false, transport: "Undefined" });
     } else if (e.data === "reconnect") {
       socket.connect();
+    } else if (e.data[0] === "optionchain") {
+      broadcastChannel.postMessage({
+        status: socket.connected,
+        transport: socket.io.engine.transport.name,
+      });
+      socket.emit(e.data[0], e.data[1]);
+      console.log(`sent event ${e.data[0]} with data ${e.data[1]}`);
+    } else if (e.data[0] === "release") {
+      broadcastChannel.postMessage({
+        status: socket.connected,
+        transport: socket.io.engine.transport.name,
+      });
+      socket.emit(e.data[0], e.data[1]);
+      console.log(`sent event ${e.data[0]} with data ${e.data[1]}`);
     }
   };
 };
@@ -43,6 +69,37 @@ socket.on("connect", () => {
 
 socket.on("data", (data) => {
   broadcastChannel.postMessage(data);
+});
+
+socket.on("optionchaindata", (underlying, data) => {
+  console.log("recieved optionchaindata");
+  console.log(data);
+  console.log(underlying);
+  const xdata = [];
+  for (let i = 0; i < data.length; i++) {
+    let x = [];
+    x.push(
+      calculatePercentageChange(
+        data[i][1],
+        yesterData.yesterOptionPrice.N[i][0],
+      ),
+    );
+    x.push(data[i][1]);
+    x.push(data[i][0]);
+    x.push(data[i][2]);
+    x.push(
+      calculatePercentageChange(
+        data[i][2],
+        yesterData.yesterOptionPrice.N[i][1],
+      ),
+    );
+    xdata.push(x);
+  }
+  broadcastChannel.postMessage({ data: xdata, underlying: underlying });
+});
+
+socket.on("update", (data) => {
+  broadcastChannel.postMessage({ updates: data });
 });
 
 /*

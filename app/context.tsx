@@ -1,6 +1,26 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
+export type tokenVal = {
+  token: string;
+  val: number;
+};
+
+type yesterDataType = {
+  yesterPriceN: number;
+  yesterPriceS: number;
+  yesterOptionPrice: {
+    N: number[][];
+    S: number[][];
+  };
+};
+
+export const yesterPriceData: yesterDataType = {
+  yesterPriceN: 0,
+  yesterPriceS: 0,
+  yesterOptionPrice: { N: [], S: [] },
+};
+
 export type WorkerData = {
   data: number[][];
   underlying: number;
@@ -29,6 +49,7 @@ export function DataActuator({ children }: { children: React.ReactNode }) {
   const [connectionStatus, setConnectionStatus] = useState(false);
   const [transport, setTransport] = useState("Undefined");
   const [sharedWorker, setSharedWorker] = useState<SharedWorker | null>(null);
+  const [updates, setUpdates] = useState<tokenVal[]>([]);
   useEffect(() => {
     if (typeof window !== "undefined") {
       const worker = new window.SharedWorker("/scripts/worker.js");
@@ -38,9 +59,15 @@ export function DataActuator({ children }: { children: React.ReactNode }) {
         if ("data" in e.data) {
           setData(e.data.data);
           setUnderlying(e.data.underlying);
-        } else {
+        } else if ("status" in e.data) {
           setConnectionStatus(e.data.status);
           setTransport(e.data.transport);
+        } else if ("yesterPriceN" in e.data) {
+          yesterPriceData.yesterPriceN = e.data.yesterPriceN;
+          yesterPriceData.yesterPriceS = e.data.yesterPriceS;
+          yesterPriceData.yesterOptionPrice = e.data.yesterOptionPrice;
+        } else if ("updates" in e.data) {
+          setUpdates(e.data.updates);
         }
       });
       worker.port.onmessage = (e) => {

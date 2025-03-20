@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 // import { socket } from "../socket";
 import {
   AutoSizer,
@@ -18,7 +18,19 @@ export type dataObject = {
 };
 
 export default function Home() {
-  const { data, transport, connectionStatus, underlying } = useWorker();
+  const { data, transport, connectionStatus, underlying, worker } = useWorker();
+
+  useEffect(() => {
+    if (worker) {
+      worker.port.postMessage(["optionchain", "N"]);
+    }
+
+    return () => {
+      if (worker) {
+        worker.port.postMessage(["release", "N"]);
+      }
+    };
+  }, []);
 
   const cache = useRef(
     new CellMeasurerCache({
