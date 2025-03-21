@@ -1,7 +1,6 @@
 importScripts("socket.io.js");
 let socket = io("http://localhost:8080");
 const broadcastChannel = new BroadcastChannel("SocketIOChannel");
-const idToPort = {};
 const xhr = new XMLHttpRequest();
 let yesterData = {};
 let yesterDataFetched = false;
