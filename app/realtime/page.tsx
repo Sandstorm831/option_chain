@@ -36,13 +36,13 @@ function getTokenFromCoorindates(row: number, col: number) {
   return token;
 }
 
-let intval: NodeJS.Timeout | null = null;
+// let intval: NodeJS.Timeout | null = null;
 
 function getCoordinatesFromToken(token: string) {
   const num = Number(token.slice(0, token.length - 1));
   const sym = token[token.length - 1];
-  let subindex, index;
-  subindex = sym === "C" ? 0 : 1;
+  let index;
+  const subindex = sym === "C" ? 0 : 1;
   if (num < 30000) {
     index = (num - initialStrikeN) / 100;
   } else {
@@ -112,7 +112,7 @@ export default function Page() {
   function rowRenderer({ key, index, style, parent }: ListRowProps) {
     const obj = strikes ? strikes[index] : null;
     if (!obj) return <div key={key} style={style}></div>;
-    let text_colr_C, text_colr_P;
+    // let text_colr_C, text_colr_P;
     // if (obj[0] > 0) {
     //   text_colr_C = "text-[#007a00]";
     // } else {
@@ -152,7 +152,7 @@ export default function Page() {
   }
 
   function subscribeByIdx(row: number, col: number) {
-    if (intval) clearInterval(intval);
+    // if (intval) clearInterval(intval);
     const temp = subscribers;
     const token = getTokenFromCoorindates(row, col);
     if (temp[row][col] === "subscribed") {

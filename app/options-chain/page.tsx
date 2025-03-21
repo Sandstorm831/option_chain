@@ -26,12 +26,12 @@ const initialStrikeN = 18000;
 const initialStrikeS = 68000;
 
 function getIndexfromToken(token: string) {
-  let index, subIndex, percInd, yesterIndex;
+  let index;
   const num = Number(token.slice(0, token.length - 1));
   const sym = token[token.length - 1];
-  subIndex = sym === "C" ? 1 : 3;
-  percInd = sym === "C" ? 0 : 4;
-  yesterIndex = sym === "C" ? 0 : 1;
+  const subIndex = sym === "C" ? 1 : 3;
+  const percInd = sym === "C" ? 0 : 4;
+  const yesterIndex = sym === "C" ? 0 : 1;
   if (num < 30000) {
     index = (num - initialStrikeN) / 100;
   } else {

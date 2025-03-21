@@ -11,8 +11,8 @@ export default function RealtimeCallPutTileTwo({
   index: number;
   theSubscriber: string;
 }) {
-  const price_ind = callPut === "C" ? 1 : 3;
-  const change_ind = callPut === "C" ? 0 : 4;
+  // const price_ind = callPut === "C" ? 1 : 3;
+  // const change_ind = callPut === "C" ? 0 : 4;
   const sub_ind = callPut === "C" ? 0 : 1;
   return (
     <div className="w-full h-[50px] flex justify-between bg-white rounded-lg my-1 px-2 font-mono">

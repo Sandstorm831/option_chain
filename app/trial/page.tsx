@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useWorker } from "../context";
 
-export default function () {
+export default function Page() {
   const { worker } = useWorker();
   const [inp, setInp] = useState("");
   return (

@@ -13,8 +13,8 @@ export default function SubscribedCallPutTile2({
   subscribeByIdx: (row: number, col: number) => void;
   idx: number;
 }) {
-  const price_ind = callPut === "C" ? 1 : 3;
-  const change_ind = callPut === "C" ? 0 : 4;
+  // const price_ind = callPut === "C" ? 1 : 3;
+  // const change_ind = callPut === "C" ? 0 : 4;
   const opt_type = callPut === "C" ? "Call" : "Put";
   const sub_ind = callPut === "C" ? 0 : 1;
   return (
