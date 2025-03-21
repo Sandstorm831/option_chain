@@ -129,7 +129,7 @@ export function DataActuator({ children }: { children: React.ReactNode }) {
           fillStrikes();
         } else if ("requestagain" in e.data) {
           setTimeout(() => {
-            worker.port.postMessage("yesterdata");
+            worker.port.postMessage("fetchyesterdata");
           }, 1000);
         } else if ("tokenval" in e.data) {
           console.log("hey, tokenval");

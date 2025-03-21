@@ -5,10 +5,18 @@ const idToPort = {};
 const xhr = new XMLHttpRequest();
 let yesterData = {};
 let yesterDataFetched = false;
+let yesterDataState = 0;
 const initialStrikeN = 18000;
 const initialStrikeS = 68000;
 
 xhr.open("GET", "http://localhost:8080/init");
+// xhr.setRequestHeader("Accept", "*/*");
+// xhr.setRequestHeader("Content-Type", "text/plain");
+xhr.setRequestHeader("Content-Type", "application/json");
+// xhr.setRequestHeader("accept-encoding", "gzip, deflate, br, zstd");
+xhr.onreadystatechange = () => {
+  yesterDataState = xhr.readyState;
+};
 xhr.addEventListener("load", (e) => {
   yesterData = JSON.parse(xhr.responseText);
   console.log(yesterData);
@@ -16,7 +24,9 @@ xhr.addEventListener("load", (e) => {
   yesterDataFetched = true;
 });
 xhr.addEventListener("error", (e) => {
+  console.log("some error occured in recieving yesterdata");
   console.log(e);
+  yesterDataFetched = false;
 });
 xhr.send();
 
@@ -57,8 +67,19 @@ onconnect = function (event) {
       socket.connect();
     } else if (e.data === "yesterdata") {
       if (yesterDataFetched) broadcastChannel.postMessage(yesterData);
-      else broadcastChannel.postMessage({ requestagain: "requestagain" });
+      else if (yesterDataState < 4)
+        broadcastChannel.postMessage({ requestagain: "requestagain" });
+      else socket.emit("fetchyesterdata");
+    } else if (e.data === "fetchyesterdata") {
+      broadcastChannel.postMessage({
+        status: socket.connected,
+        transport: socket.io.engine.transport.name,
+      });
+      socket.emit("fetchyesterdata");
     } else if (e.data[0] === "optionchain") {
+      // console.log(
+      //   `recieved event ${e.data[0]} with data ${e.data[1]} with id : ${e.data[2]}`,
+      // );
       broadcastChannel.postMessage({
         status: socket.connected,
         transport: socket.io.engine.transport.name,
@@ -75,6 +96,7 @@ onconnect = function (event) {
       socket.emit(e.data[0], e.data[1]);
       console.log(`sent event ${e.data[0]} with data ${e.data[1]}`);
     } else if (e.data[0] === "release") {
+      // console.log(`recieved event ${e.data[0]} with data ${e.data[1]}`);
       broadcastChannel.postMessage({
         status: socket.connected,
         transport: socket.io.engine.transport.name,
@@ -161,6 +183,13 @@ socket.on("realtimedata", (data) => {
 
 socket.on("update", (data) => {
   broadcastChannel.postMessage({ updates: data });
+});
+
+socket.on("fetchyesterdata", (data) => {
+  yesterData = data;
+  yesterDataFetched = true;
+  console.log(yesterData);
+  broadcastChannel.postMessage(yesterData);
 });
 
 /*

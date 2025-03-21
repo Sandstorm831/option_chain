@@ -61,7 +61,7 @@ function useUpdates(
         const [index, priceIndex, changeIndex, yesterIndex] = getIndexfromToken(
           updates[i].token,
         );
-        console.log(temp.length, index, updates[i].token);
+        // console.log(temp.length, index, updates[i].token);
         temp[index][priceIndex] = updates[i].val;
         temp[index][changeIndex] = calculatePercentageChange(
           updates[i].val,
@@ -194,6 +194,7 @@ export default function Home() {
         <option
           onClick={() => {
             if (subscribed !== "N") {
+              console.log("releasing S and subscribing N");
               worker?.port.postMessage(["release", "S"]);
               worker?.port.postMessage(["optionchain", "N", uident]);
               if (setData) setData([]);
@@ -207,6 +208,7 @@ export default function Home() {
         <option
           onClick={() => {
             if (subscribed !== "S") {
+              console.log("releasing M and subscribing S");
               worker?.port.postMessage(["release", "N"]);
               worker?.port.postMessage(["optionchain", "S", uident]);
               if (setData) setData([]);
