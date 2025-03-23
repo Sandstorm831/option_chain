@@ -11,7 +11,7 @@ const initialStrikeS = 68000;
 xhr.open("GET", "http://localhost:8080/init");
 // xhr.setRequestHeader("Accept", "*/*");
 // xhr.setRequestHeader("Content-Type", "text/plain");
-xhr.setRequestHeader("Content-Type", "application/json");
+// xhr.setRequestHeader("Content-Type", "application/json");
 // xhr.setRequestHeader("accept-encoding", "gzip, deflate, br, zstd");
 xhr.onreadystatechange = () => {
   yesterDataState = xhr.readyState;
@@ -58,6 +58,7 @@ onconnect = function (event) {
   } else {
     socket.connect();
   }
+  if (yesterDataFetched) port.postMessage(yesterData);
   port.onmessage = (e) => {
     if (e.data === "disconnect") {
       socket.disconnect();

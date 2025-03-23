@@ -108,15 +108,15 @@ export default function Home() {
 
   useEffect(() => {
     if (worker) {
-      worker.port.postMessage(["optionchain", subscribed, uident]);
       worker.port.postMessage("yesterdata");
+      worker.port.postMessage(["optionchain", subscribed, uident]);
     }
     return () => {
       if (worker) {
         worker.port.postMessage(["release", subscribed]);
       }
     };
-  }, []);
+  }, [worker]);
 
   const cache = useRef(
     new CellMeasurerCache({
